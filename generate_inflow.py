@@ -1,42 +1,25 @@
-scadd = '/scratch/prasad.subramanian/'
-p5add = scadd + 'project5/'
-mp5add = p5add + 'p5_routines/mps_montjoie/projects/'
-import matplotlib.pyplot as plt
-from astropy.io import fits
-import numpy as np
-import jax.numpy as jnp
 
-import pyflct
+import matplotlib.pyplot as plt
+import numpy as np
+import multiprocessing
+
 from multiprocessing import Pool
 from astropy.convolution import Gaussian2DKernel as astropyGaussian2D, convolve as astropyConv
 from scipy import interpolate
-import scipy.io
-import sys
-sys.path.insert(1, mp5add)
-import useful_functions as uf
-
 from skimage.feature import blob_log, blob_doh, blob_dog
 from skimage.color import rgb2gray
 import copy
-import warnings
-warnings.filterwarnings("ignore")
-import gc
-from multiprocessing import Pool
 import random
-import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--ll', type=int, help='list number')
-args = parser.parse_args()
-LL = args.ll
+nproc = multiprocessing.cpu_count()
+qsfile = np.load('divergence_bfield_quiet_Sun.npz')
+div = qsfile['div']
+bq = qsfile['bfield']
 
+def smooth(arr, sigma):
+    return astropyConv(arr,astropyGaussian2D(sigma),preserve_nan=True,boundary='wrap')
 
-TI = '-03'
-mqs = scipy.io.loadmat(p5add + 'EAR/aaron_flows/flows{}_qs.mat'.format(TI))
-div = np.moveaxis(mqs['div'],-1,0)
-bq = np.moveaxis(mqs['b'],-1,0)
-
-with Pool(32) as p:
+with Pool(nproc) as p:
     bs = p.starmap(uf.smooth,zip(bq,[5]*len(bq)))
     divs = p.starmap(uf.smooth,zip(div,[7]*len(div)))
 bs = np.asarray(bs) ; divs = np.asarray(divs)
@@ -57,8 +40,8 @@ def generate_inflow(blobs_log):
 #     print(blobs_log)
     num = random.randrange(0,len(blobs_log))
     idx = blobs_log[num,:2].astype(int)
-    idt = np.zeros((20,2))
-    for ii in range(20):
+    idt = np.zeros((50,2))
+    for ii in range(50):
         idt[ii,0] = int(np.random.normal(idx[0],5))
         idt[ii,1] = int(np.random.normal(idx[1]+10,14))
 #         print(idt[ii])
@@ -81,7 +64,7 @@ def gen_ind_list(divsm,samp_num):
     blobs_log = reject_cell(blobs_log[:,:2],samp_num)
     return blobs_log
 
-with Pool(32) as p:
+with Pool(nproc) as p:
     gc.collect()
     indx_list = p.starmap(gen_ind_list,zip(divs,np.arange(len(divs))))
     
@@ -103,15 +86,14 @@ def gen_map(image,num):
 print('entering main loop')
 r1 = 255-42 ; r2 = 255+43
 maps_list = []
-for ii in range(2500):
-    with Pool(32) as p:
+for ii in range(10):
+    with Pool(nproc) as p:
         gc.collect()
         maps = p.starmap(gen_map, zip(divs,np.arange(len(divs))))
     maps = np.mean(maps,axis=0)
     maps_list.append(np.asarray(maps)[r1:r2,r1:r2])
 maps_list = np.asarray(maps_list).astype(np.float32)
-maps_list = maps_list/abs(maps_list).max(axis=(1,2))[:,None,None]
 print(maps_list.shape)
 print('saving file')
-np.savez_compressed(mp5add + 'model_flows/side_inflow{}.npz'.format(LL),arr=maps_list)
+np.savez_compressed('model_flows/inflow.npz', arr=maps_list)
 print('saved file')
