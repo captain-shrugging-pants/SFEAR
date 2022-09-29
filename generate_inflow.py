@@ -15,7 +15,6 @@ nproc = multiprocessing.cpu_count()
 qsfile = np.load('divergence_bfield_quiet_Sun.npz')
 div = qsfile['div']
 bq = qsfile['bfield']
-print('a')
 def smooth(arr, sigma):
     return astropyConv(arr,astropyGaussian2D(sigma),preserve_nan=True,boundary='wrap')
 
