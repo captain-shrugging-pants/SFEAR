@@ -1,4 +1,6 @@
-# synthetic-flows-and-magnetic-fields
+# SFEAR...or...synthetic-fields-for-emerging-active-regions
+
+Below is the procedure described to generate synthetic flow-field and magnetic-field for emerging active regions.
 
 Inspired by the flow model in [Birch, A.C. et al, 2019](https://ui.adsabs.harvard.edu/abs/2019A%26A...628A..37B/abstract), realistic active region inflows and vorticity are created by using features from horizontal divergence flow maps obtained using any procedure (LCT / seismology).
 
