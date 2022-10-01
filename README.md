@@ -1,4 +1,5 @@
-# SFEAR...or...synthetic-fields-for-emerging-active-regions
+# SFEAR
+# Synthetic-Fields-for-Emerging-Active-Regions
 
 Below is the procedure described to generate synthetic flow-field and magnetic-field for emerging active regions.
 
